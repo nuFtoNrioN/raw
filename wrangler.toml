@@ -1,0 +1,9 @@
+# WORKER RAW: https://raww.<subdomain>.workers.dev/<id>
+name = "raww"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "noir-personal"
+database_id = "DIEN_ID_SAU_KHI_TAO_D1"   # cùng ID với bio và dash
