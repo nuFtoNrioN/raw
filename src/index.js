@@ -41,4 +41,5 @@ async function bumpRun(env, request, id) {
       env.DB.prepare('UPDATE scripts SET runs = runs + 1 WHERE id = ?').bind(id),
     ]);
   } catch (e) { console.error('bump', e); }
+  try { await env.DB.prepare("INSERT INTO script_stats (day, script_id, kind, count) VALUES (?, ?, 'run', 1) ON CONFLICT(day, script_id, kind) DO UPDATE SET count = count + 1").bind(today(), id).run(); } catch (e) { /* chưa chạy migration 007 */ }
 }
