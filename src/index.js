@@ -21,7 +21,7 @@ export default {
 
 // Chống spam số liệu: mỗi IP (đã băm, đổi mỗi ngày) chỉ được tính tối đa N lần/ngày cho mỗi loại.
 // Không chặn truy cập, chỉ không cộng thêm vào số liệu.
-async function allow(env, request, kind, ref, limit) {
+async function allow(env, request, kind, ref) {
   const day = today();
   const ip = (request && request.headers.get('CF-Connecting-IP')) || 'x';
   const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip + '|' + day)));
@@ -29,12 +29,12 @@ async function allow(env, request, kind, ref, limit) {
   try {
     const r = await env.DB.prepare('INSERT INTO rate_limits (k, n, day) VALUES (?, 1, ?) ON CONFLICT(k) DO UPDATE SET n = n + 1 RETURNING n')
       .bind(day + '|' + kind + '|' + (ref || '') + '|' + who, day).first();
-    return r.n <= limit;
-  } catch (e) { return true; } // chưa chạy migration 005 thì không chặn
+    return r.n;
+  } catch (e) { return 1; } // chưa chạy migration 005 thì không chặn
 }
 
 async function bumpRun(env, request, id) {
-  if (!(await allow(env, request, 'run', id, 40))) return;
+  if ((await allow(env, request, 'run', id)) > 40) return;
   try {
     await env.DB.batch([
       env.DB.prepare("INSERT INTO daily_stats (day, kind, count) VALUES (?, 'run', 1) ON CONFLICT(day, kind) DO UPDATE SET count = count + 1").bind(today()),
